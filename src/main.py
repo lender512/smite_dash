@@ -1,86 +1,45 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-import os
-from selenium.webdriver.common.by import By
-import chromedriver_binary
-from time import sleep
-
-class Player:
-
-    def __init__(self, name, id):
-        self.name = name
-        self.id = id
-        self.matches_played = None
-        self.matches_won = None
-        self.matches_lost = None
-        self.player_kills_kda = None
-        self.player_kills_kills = None
-        self.player_kills_deaths = None
-        self.player_kills_assists = None
-        self.farming_gpm = None
-        self.farming_gold = None
-        self.farming_minion_damage = None
-        self.farming_minion_kills = None
-        self.damage_player = None
-        self.damage_team_healing = None
-        self.damage_self_healing = None
-        self.damage_inhand = None
-        self.damage_mitigated = None
-        self.damage_taken = None
-        
-    def __str__(self):
-        return f'{self.name} {self.id}'
-
-    def __repr__(self):
-        return f'{self.name} {self.id}'
-
-class scraper:
-    def __init__(self):
-        user_home_dir = os.path.expanduser("~")
-        chrome_binary_path = os.path.join(user_home_dir, "chrome-linux64", "chrome")
-        chromedriver_path = os.path.join(user_home_dir, "chromedriver-linux64", "chromedriver")
-        options = Options()
-        options.binary_location = chrome_binary_path
-        options.add_argument("--no-sandbox") 
-        options.add_argument("--disable-setuid-sandbox") 
-
-        options.add_argument("--remote-debugging-port=9222")  # this
-        options.add_argument("--disable-dev-shm-using") 
-        options.add_argument("--disable-extensions") 
-        options.add_argument("--disable-gpu") 
-        
-        service = Service(chromedriver_path)
-        
-        self.driver = webdriver.Chrome(options=options, service=service)
-
-    def get_player(self, player):
-        self.driver.get(f'https://smite.guru/profile/{player.id}_{player.name}')
-        sleep(5)
-        
-        #find class="widget tsw"
-        stats = self.driver.find_element(By.CLASS_NAME, 'widget.tsw').text.split('\n')
-        ignore = ['PLAYER STATS', 'Totals']
-        stats = [x for x in stats if x not in ignore]
-        stats = [x.replace('GPM', 'gpm').replace('KDA', 'kda') for x in stats]
-        for i in range(len(stats)):
-            #check if all uppercase
-            if stats[i][-1].isupper():
-                subset = stats[i]
-                continue
-            elif stats[i][0].isnumeric():
-                continue
-            setattr(player, f"{subset.lower().replace(' ', '_')}_{stats[i].lower().replace(' ', '_')}", stats[i+1])
-        print(player.__dict__)
-
-    def close(self):
-        self.driver.quit()
-        
-    def __del__(self):
-        self.close()
+import streamlit as st
+import pandas as pd
+import numpy as np
 
 
-if __name__ == '__main__':
-    player = Player('Nutax', '6776734')
-    scraper = scraper()
-    scraper.get_player(player)
+df = pd.read_csv('data/raw/players.csv')
+
+# name,id,matches_played,matches_won,matches_lost,player_kills_kda,player_kills_kills,player_kills_deaths,player_kills_assists,farming_gpm,farming_gold,farming_minion_damage,farming_minion_kills,damage_player,damage_team_healing,damage_self_healing,damage_inhand,damage_mitigated,damage_taken
+
+rename_dic = {  'name': 'Player name',
+                'matches_played': 'Matches played',
+                'matches_won': 'Matches won',
+                'matches_lost': 'Matches lost',
+                'player_kills_kda': 'KDA',
+                'player_kills_kills': 'kills',
+                'player_kills_deaths': 'deaths',
+                'player_kills_assists': 'assists',
+                'farming_gpm': 'GPM',
+                'farming_gold': 'Gold',
+                'farming_minion_damage': 'Minion damage',
+                'farming_minion_kills': 'Minion kills',
+                'damage_player': 'Player damage',
+                'damage_team_healing': 'Team healing',
+                'damage_self_healing': 'Self healing',
+                'damage_inhand': 'Inhand damage',
+                'damage_mitigated': 'Mitigated damage',
+                'damage_taken': 'Damage taken'}
+
+st.title('SMITE: Smoteros players stats')
+
+match_columns = ['matches_played', 'matches_won', 'matches_lost']
+kda_columns = ['player_kills_kda', 'player_kills_kills', 'player_kills_deaths', 'player_kills_assists']
+farming_columns = ['farming_gpm', 'farming_gold', 'farming_minion_damage', 'farming_minion_kills']
+damage_columns = ['damage_player', 'damage_team_healing', 'damage_self_healing', 'damage_inhand', 'damage_mitigated', 'damage_taken']
+
+grids = {
+    'Matches ⚔️': match_columns,
+    'KDA 💀': kda_columns,
+    'Farming 🧑‍🌾': farming_columns,
+    'Damage 🩸': damage_columns
+}
+
+for grid in grids:
+    st.subheader(grid)
+    st.write(df[['name'] + grids[grid]].rename(columns=rename_dic), hide_index=True)
