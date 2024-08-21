@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 
 
-df = pd.read_csv('data/raw/players.csv')
+df = pd.read_csv('data/players.csv')
 df['win_rate'] = df['matches_won'] / df['matches_played']
-seasonal_df = pd.read_csv('data/raw/players_season.csv')
+seasonal_df = pd.read_csv('data/players_season.csv')
 seasonal_df['win_rate'] = seasonal_df['matches_won'] / seasonal_df['matches_played']
 
 # name,id,matches_played,matches_won,matches_lost,player_kills_kda,player_kills_kills,player_kills_deaths,player_kills_assists,farming_gpm,farming_gold,farming_minion_damage,farming_minion_kills,damage_player,damage_team_healing,damage_self_healing,damage_inhand,damage_mitigated,damage_taken
