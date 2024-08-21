@@ -2,10 +2,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 import os
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 import chromedriver_binary
+from selenium.webdriver.support.wait import WebDriverWait
 from time import sleep
 import pandas as pd
+from tqdm import tqdm
 
 data_path = 'data/raw'
 
@@ -63,14 +66,22 @@ class scraper:
 
         self.driver = webdriver.Chrome(options=options, service=service)
 
-    def get_player(self, player):
-        self.driver.get(
-            f'https://smite.guru/profile/{player.id}_{player.name}')
-        sleep(5)
-
-        # find class="widget tsw"
-        stats = self.driver.find_element(
-            By.CLASS_NAME, 'widget.tsw').text.split('\n')
+    def get_player(self, player, season=None):
+        wait = WebDriverWait(self.driver, 10)
+        url = f'https://smite.guru/profile/{player.id}_{player.name}'
+        self.driver.get(url)
+        sleep(2)
+        if season:
+            #find dd with text "Season {season}"
+            season_dd = wait.until(lambda driver: driver.find_element(By.XPATH, f"//a[contains(text(), 'Season {season}')]"))
+            self.driver.execute_script("arguments[0].scrollIntoView();", season_dd)
+            season_dd.click()
+            sleep(2)
+        try:
+            stats = wait.until(lambda driver: driver.find_element(By.CLASS_NAME, 'widget.tsw')).text.split('\n')
+        except TimeoutException:
+            print(f'Error getting player {player.name} {player.id}')
+            return
         ignore = ['PLAYER STATS', 'Totals']
         stats = [x for x in stats if x not in ignore]
         stats = [x.replace('GPM', 'gpm').replace('KDA', 'kda') for x in stats]
@@ -105,11 +116,21 @@ if __name__ == '__main__':
                Player('EpZero',     '6418704')]
     scraper = scraper()
     
-    for player in players:
-        scraper.get_player(player)
+    # for player in players:
+    #     scraper.get_player(player)
+    # df = load_data(players)
+    # df.to_csv(f'{data_path}/players.csv', index=False)
+    
+    seasons = range(3, 12)
+    season_df = pd.DataFrame()
+    for season in tqdm(seasons):
+        for player in tqdm(players):
+            scraper.get_player(player, season)
+        temp_df = load_data(players)
+        temp_df['season'] = season
+        season_df = pd.concat([season_df, temp_df])
         
-    df = load_data(players)
-    df.to_csv(f'{data_path}/players.csv', index=False)
+    season_df.to_csv(f'{data_path}/players_season.csv', index=False)
         
     
     
