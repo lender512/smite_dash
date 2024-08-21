@@ -4,7 +4,7 @@ import numpy as np
 
 
 df = pd.read_csv('data/raw/players.csv')
-
+df['win_rate'] = df['matches_won'] / df['matches_played']
 # name,id,matches_played,matches_won,matches_lost,player_kills_kda,player_kills_kills,player_kills_deaths,player_kills_assists,farming_gpm,farming_gold,farming_minion_damage,farming_minion_kills,damage_player,damage_team_healing,damage_self_healing,damage_inhand,damage_mitigated,damage_taken
 
 rename_dic = {  'name': 'Player name',
@@ -24,11 +24,13 @@ rename_dic = {  'name': 'Player name',
                 'damage_self_healing': 'Self healing',
                 'damage_inhand': 'Inhand damage',
                 'damage_mitigated': 'Mitigated damage',
-                'damage_taken': 'Damage taken'}
+                'damage_taken': 'Damage taken',
+                'win_rate': 'Win rate'
+                }
 
 st.title('SMITE: Smoteros players stats')
 
-match_columns = ['matches_played', 'matches_won', 'matches_lost']
+match_columns = ['matches_played', 'matches_won', 'matches_lost', 'win_rate']
 kda_columns = ['player_kills_kda', 'player_kills_kills', 'player_kills_deaths', 'player_kills_assists']
 farming_columns = ['farming_gpm', 'farming_gold', 'farming_minion_damage', 'farming_minion_kills']
 damage_columns = ['damage_player', 'damage_team_healing', 'damage_self_healing', 'damage_inhand', 'damage_mitigated', 'damage_taken']
